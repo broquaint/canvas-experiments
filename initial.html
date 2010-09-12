@@ -1,0 +1,33 @@
+<html>
+ <head>
+  <script type="application/javascript">
+function draw() {
+ var canvas = document.getElementById("canvas");
+ var ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "rgb(200,0,0)";
+  for(var i = 0; i < 200; i += 20) {
+    for(var j = 0; j < 200; j += 20) {
+      ctx.fillRect(i, j, 18, 18);
+    }
+  }
+
+  setInterval(function() {
+    var canvas = document.getElementById("canvas");
+    var ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "rgb(0,200,0)";
+    var x = Math.floor(Math.random() * 200),
+        y = Math.floor(Math.random() * 200);
+        x -= x % 20;
+        y -= y % 20;
+    console.log('rect at ', x, y);
+    ctx.fillRect(x, y, 18, 18);
+  }, 1000);
+}
+  </script>
+ </head>
+ <body onload="draw()">
+   <canvas id="canvas" width="300" height="300"></canvas>
+ </body>
+</html>

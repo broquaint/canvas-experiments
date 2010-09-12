@@ -1,0 +1,74 @@
+<html>
+ <head>
+  <script>
+var SQUAREA = 300;
+function square(x, y, colour) {
+ var canvas = document.getElementById("canvas");
+ var ctx    = canvas.getContext("2d");
+
+ ctx.fillStyle = colour || "rgb(200,0,0)";
+ ctx.fillRect(x, y, 18, 18);
+}
+
+function drawPair(bp) {
+  square(bp.a.x, bp.a.y, "rgb(0,0,200)");
+  square(bp.b.x, bp.b.y, "rgb(0,0,200)");
+}
+
+function grid() {
+  for(var i = 0; i < SQUAREA; i += 20) {
+    for(var j = 0; j < SQUAREA; j += 20) {
+      square(i, j);
+    }
+  }
+}
+
+var blocks = [];
+function draw() {
+  grid();
+  for(var i = 0; i < blocks.length; i++)
+    drawPair(blocks[i]);
+}
+
+function hitPair(bp) {
+  var x = bp.a.x,
+      y = bp.a.y + 20;
+  for(var i = 0; i < blocks.length; i++)
+    if(x == blocks[i].a.x && y == blocks[i].b.y)
+      return true;
+  return false;
+}
+
+function newPair() {
+  var enter = Math.floor(Math.random() * SQUAREA);
+  enter -= enter % 20;
+
+  var bp = {};
+  bp.a = { x: enter, y: 0   };
+  bp.b = { x: enter, y: -20 };
+  return bp;
+}
+
+function start() {
+  blocks.push(newPair());
+
+  draw();
+}
+
+setInterval(function() {
+  var blockPair = blocks[blocks.length - 1];
+  if(hitPair(blockPair) || blockPair.a.y >= (SQUAREA - 20)) {
+    blocks.push(newPair());
+    return;
+  }
+  blockPair.a.y += 20;
+  blockPair.b.y += 20;
+
+  draw();
+}, 500);
+  </script>
+ </head>
+ <body onload="start()">
+   <canvas id="canvas" width="300" height="300"></canvas>
+ </body>
+</html>

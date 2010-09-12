@@ -1,0 +1,41 @@
+<html>
+ <head>
+  <script>
+function square(x, y, colour) {
+ var canvas = document.getElementById("canvas");
+ var ctx = canvas.getContext("2d");
+
+ ctx.fillStyle = colour || "rgb(200,0,0)";
+ ctx.fillRect(x, y, 18, 18);
+}
+
+function grid() {
+  for(var i = 0; i < 300; i += 20) {
+    for(var j = 0; j < 300; j += 20) {
+      square(i, j);
+    }
+  }
+}
+
+var move = {x:0,y:0};
+document.addEventListener('keydown', function(evt) {
+  var dir = evt.keyIdentifier;
+
+  if(dir == 'Right')
+    move.x += 20;
+  else if(dir == 'Left')
+    move.x -= 20;
+  else if(dir == 'Up')
+    move.y -= 20;
+  else if(dir == 'Down')
+    move.y += 20;
+
+  grid();
+  square(move.x, move.y, "rgb(0,0,200)");
+}, true);
+  </script>
+ </head>
+ <body onload="grid()">
+   <canvas id="canvas" width="300" height="300"></canvas>
+ </body>
+</html>
