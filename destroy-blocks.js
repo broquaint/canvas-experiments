@@ -1,3 +1,7 @@
+// The idea was to add the ability to detect rectangles of blocks.
+// The current "design" makes this more difficult thant it needs to be.
+// So the best thing to do will be to start over. Probably.
+
 var SQUAREA = 150;
 var BS      = 20;
 var LEFT    = 37;
@@ -7,13 +11,14 @@ function square(x, y, colour) {
  var canvas = document.getElementById("canvas");
  var ctx    = canvas.getContext("2d");
 
- ctx.fillStyle = colour || "rgb(200,0,0)";
+                          // Light pink
+ ctx.fillStyle = colour || "rgb(225,150,150)";
  ctx.fillRect(x, y, 18, 18);
 }
 
 function drawPair(bp) {
-  square(bp.a.x, bp.a.y, "rgb(0,0,200)");
-  square(bp.b.x, bp.b.y, "rgb(0,0,200)");
+  square(bp.a.x, bp.a.y, bp.colour);
+  square(bp.b.x, bp.b.y, bp.colour);
 }
 
 function grid() {
@@ -24,11 +29,13 @@ function grid() {
   }
 }
 
+// Dark {red,green,blue}
+COLOURS = ["rgb(100,30,30)", "rgb(30,100,30)", "rgb(30,30,100)"];
 function newPair() {
   var enter = Math.floor(Math.random() * SQUAREA);
   enter -= enter % BS;
 
-  var bp = {};
+  var bp = { colour: COLOURS[Math.floor(Math.random() * 10 % COLOURS.length)] };
   bp.a = { x: enter, y: 0   };
   bp.b = { x: enter, y: -BS };
   return bp;
@@ -83,9 +90,29 @@ function hasCollision(curBp, dir) {
   return false;
 }
 
-setInterval(function() {
+function runTheNumbers() {
+  // XXX This is how the little hacks begin
+  var botTot = 0,
+      topTot = 0;
+  for(var i = 0; i < blocks.length; i++) {
+    if(blocks[i].a.y >= (SQUAREA - BS))
+      botTot++;
+    if(blocks[i].b.y <= 0)
+      topTot++;
+  }
+  if(botTot == Math.ceil(SQUAREA / BS))
+    document.getElementById('tally').textContent = 'Some win!';
+  if(topTot > 0) {
+    document.getElementById('tally').textContent = 'EPIC FAIL';
+    return 'GAME OVER';
+  }
+}
+
+var gameLoopId = setInterval(function() {
   var blockPair = blocks[blocks.length - 1];
   if(hasCollision(blockPair) || blockPair.a.y >= (SQUAREA - BS)) {
+    if(runTheNumbers() === 'GAME OVER')
+      clearInterval(gameLoopId);
     blocks.push(newPair());
     return;
   }

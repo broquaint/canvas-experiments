@@ -83,9 +83,29 @@ function hasCollision(curBp, dir) {
   return false;
 }
 
-setInterval(function() {
+function runTheNumbers() {
+  // XXX This is how the little hacks begin
+  var botTot = 0,
+      topTot = 0;
+  for(var i = 0; i < blocks.length; i++) {
+    if(blocks[i].a.y >= (SQUAREA - BS))
+      botTot++;
+    if(blocks[i].b.y <= 0)
+      topTot++;
+  }
+  if(botTot == Math.ceil(SQUAREA / BS))
+    document.getElementById('tally').textContent = 'Some win!';
+  if(topTot > 0) {
+    document.getElementById('tally').textContent = 'EPIC FAIL';
+    return 'GAME OVER';
+  }
+}
+
+var gameLoopId = setInterval(function() {
   var blockPair = blocks[blocks.length - 1];
   if(hasCollision(blockPair) || blockPair.a.y >= (SQUAREA - BS)) {
+    if(runTheNumbers() === 'GAME OVER')
+      clearInterval(gameLoopId);
     blocks.push(newPair());
     return;
   }
