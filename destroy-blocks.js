@@ -113,9 +113,15 @@ var gameLoopId;
 function run() {
   clearInterval(gameLoopId);
   start();
+  init_loop();
+}
+
+function init_loop() {
   gameLoopId = setInterval(function() {
-    var blockPair = blocks[blocks.length - 1];
-    if(hasCollision(blockPair) || blockPair.a.y >= (SQUAREA - BS)) {
+    var blockPair = blocks[blocks.length - 1],
+        collision = hasCollision(blockPair);
+    if(collision) {
+      // console.log(`collision '${collision}' at a:`, blockPair.a, 'b:', blockPair.b);
       if(runTheNumbers() === 'GAME OVER') {
         clearInterval(gameLoopId);
       }
@@ -131,6 +137,16 @@ function run() {
   }, 500);
 }
 
+function pause() {
+  if(gameLoopId) {
+    clearInterval(gameLoopId);
+    gameLoopId = null;
+  }
+  else {
+    init_loop();
+  }
+}
+
 document.addEventListener('keydown', function(evt) {
   var key       = evt.keyCode,
       blockPair = blocks[blocks.length - 1],
@@ -142,7 +158,15 @@ document.addEventListener('keydown', function(evt) {
     return;
   }
 
-  // Right
+  // p == Pause
+  if(key == 80) {
+    pause();
+    return;
+  }
+
+  if(gameLoopId === null)
+    return;
+
   if(key == RIGHT)
     move.x += BS;
   // Left
