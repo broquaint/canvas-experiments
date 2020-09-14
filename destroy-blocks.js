@@ -47,6 +47,7 @@ function start() {
   blocks = [newPair()];
   draw();
 }
+
 function draw() {
   grid();
   for(var i = 0; i < blocks.length; i++)
@@ -108,19 +109,27 @@ function runTheNumbers() {
   }
 }
 
-var gameLoopId = setInterval(function() {
-  var blockPair = blocks[blocks.length - 1];
-  if(hasCollision(blockPair) || blockPair.a.y >= (SQUAREA - BS)) {
-    if(runTheNumbers() === 'GAME OVER')
-      clearInterval(gameLoopId);
-    blocks.push(newPair());
-    return;
-  }
-  blockPair.a.y += BS;
-  blockPair.b.y += BS;
+var gameLoopId;
+function run() {
+  clearInterval(gameLoopId);
+  start();
+  gameLoopId = setInterval(function() {
+    var blockPair = blocks[blocks.length - 1];
+    if(hasCollision(blockPair) || blockPair.a.y >= (SQUAREA - BS)) {
+      if(runTheNumbers() === 'GAME OVER') {
+        clearInterval(gameLoopId);
+      }
+      else {
+        blocks.push(newPair());
+      }
+      return;
+    }
+    blockPair.a.y += BS;
+    blockPair.b.y += BS;
 
-  draw();
-}, 500);
+    draw();
+  }, 500);
+}
 
 document.addEventListener('keydown', function(evt) {
   var key       = evt.keyCode,
@@ -129,7 +138,7 @@ document.addEventListener('keydown', function(evt) {
 
   // r == Reset
   if(key == 82) {
-    start();
+    run();
     return;
   }
 
