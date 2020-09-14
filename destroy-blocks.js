@@ -4,8 +4,10 @@
 
 var SQUAREA = 150;
 var BS      = 20;
-var LEFT    = 37;
-var RIGHT   = 39;
+// Key codes for the keydown event
+const LEFT    = 37;
+const RIGHT   = 39;
+const DOWN    = 40;
 
 function square(x, y, colour) {
  var canvas = document.getElementById("canvas");
@@ -62,13 +64,17 @@ function hasCollision(curBp, dir) {
   // At the edge of the grid?
   if((dir == LEFT  && x == 0)
   || (dir == RIGHT && (x + 20) >= SQUAREA) ) 
-    return true;
+    return 'grid edge horizontal';
+
+  // At the edge of the grid?
+  if((y + BS) >= SQUAREA)
+    return `grid edge vertical`;
   
   for(var i = 0; i < len; i++) {
     var bp = blocks[i];
     // Any blocks below?
-    if(x == bp.a.x && (y + BS) == bp.b.y)
-      return true;
+    if(x == bp.a.x && (y + (BS * 2)) == bp.a.y)
+      return 'blocks below';
 
     // Only check for blocks left/right for movements
     if(!dir) continue;
@@ -80,12 +86,18 @@ function hasCollision(curBp, dir) {
     if( dir == LEFT
     && (curBp.a.x - BS) == bp.a.x
     && (curBp.a.x - BS) == bp.b.x)
-      return true;
-    // Any blocks to left of the current bottom block?
+      return 'blocks left';
+    // Any blocks to right of the current bottom block?
     if( dir == RIGHT
     && (curBp.a.x + BS) == bp.a.x
     && (curBp.a.x + BS) == bp.b.x)
-      return true;
+      return 'blocks right';
+
+    // Any blocks below this pair?
+    if( dir == DOWN
+    && (curBp.a.y + BS) == bp.a.y
+    && (curBp.a.y + BS) == bp.b.y)
+      return 'blocks down';
   }
 
   return false;
@@ -169,13 +181,17 @@ document.addEventListener('keydown', function(evt) {
 
   if(key == RIGHT)
     move.x += BS;
-  // Left
   else if(key == LEFT)
     move.x -= BS;
+  else if(key == DOWN)
+    move.y += BS;
 
   if(!hasCollision(blockPair, key)) {
     blockPair.a.x = move.x;
     blockPair.b.x = move.x;
+    blockPair.a.y = move.y;
+    blockPair.b.y = move.y - BS;
     draw();
   }
 }, true);
+
