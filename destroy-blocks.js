@@ -13,17 +13,16 @@ function square(x, y, colour) {
  var canvas = document.getElementById("canvas");
  var ctx    = canvas.getContext("2d");
 
-                          // Light pink
- ctx.fillStyle = colour || "rgb(225,150,150)";
+ ctx.fillStyle = colour || "rgb(175,172,177)";
  ctx.fillRect(x, y, 18, 18);
 }
 
 function drawPair(bp) {
-  square(bp.a.x, bp.a.y, bp.colour);
-  square(bp.b.x, bp.b.y, bp.colour);
+  square(bp.a.x, bp.a.y, bp.a.colour);
+  square(bp.b.x, bp.b.y, bp.b.colour);
 }
 
-function grid() {
+function drawGrid() {
   for(var i = 0; i < SQUAREA; i += BS) {
     for(var j = 0; j < SQUAREA; j += BS) {
       square(i, j);
@@ -31,30 +30,25 @@ function grid() {
   }
 }
 
-// Dark {red,green,blue}
-COLOURS = ["rgb(100,30,30)", "rgb(30,100,30)", "rgb(30,30,100)"];
+// https://coolors.co/5603ad-8367c7-b3e9c7-255957-ed6a5a-eb9486
+const COLOURS = [
+  ['purple', 'rgb(86,3,173)',   'rgb(131,103,199)'],
+  ['mint',   'rgb(37,89,87)',   'rgb(179,233,199)'],
+  ['orange', 'rgb(237,106,90)', 'rgb(235,148,134)']
+];
 function newPair() {
   var enter = Math.floor(Math.random() * SQUAREA);
   enter -= enter % BS;
 
-  var bp = { colour: COLOURS[Math.floor(Math.random() * 10 % COLOURS.length)] };
-  bp.a = { x: enter, y: 0   };
-  bp.b = { x: enter, y: -BS };
-  return bp;
+  var [base, colourA, colourB] = COLOURS[Math.floor(Math.random() * 10 % COLOURS.length)];
+  return {
+    state:  'moving',
+    a: { x: enter, y: 0,   colour: colourA, state: 'moving', base },
+    b: { x: enter, y: -BS, colour: colourB, state: 'moving', base }
+  };
 }
 
 var blocks = [];
-
-function start() {
-  blocks = [newPair()];
-  draw();
-}
-
-function draw() {
-  grid();
-  for(var i = 0; i < blocks.length; i++)
-    drawPair(blocks[i]);
-}
 
 function hasCollision(curBp, dir) {
   var x = curBp.a.x,
@@ -121,6 +115,18 @@ function runTheNumbers() {
   }
 }
 
+
+function start() {
+  blocks = [newPair()];
+  draw();
+}
+
+function draw() {
+  drawGrid();
+  for(var i = 0; i < blocks.length; i++)
+    drawPair(blocks[i]);
+}
+
 var gameLoopId;
 function run() {
   clearInterval(gameLoopId);
@@ -138,6 +144,7 @@ function init_loop() {
         clearInterval(gameLoopId);
       }
       else {
+        blocks[blocks.length - 1].state = 'set';
         blocks.push(newPair());
       }
       return;
