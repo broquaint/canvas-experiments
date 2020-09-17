@@ -98,17 +98,31 @@ function hasCollision(curBp, dir) {
 }
 
 function runTheNumbers() {
-  // XXX This is how the little hacks begin
-  var botTot = 0,
-      topTot = 0;
+  var size = Math.ceil(SQUAREA / BS),
+      grid = Array.from(
+        Array(size), () => Array.from(Array(size), () => ({base: null}))
+  );
+  blocks.forEach(p => {
+    var [x1,y1,x2,y2] = [p.a.x, p.a.y, p.b.x, p.b.y].map(n => n > 1 ? n / BS : n);
+    grid[y1][x1] = Object.assign(p.a, {gx: x1, gy: y1});
+    grid[y2][x2] = Object.assign(p.b, {gx: x2, gy: y2});
+  });
+  grid.forEach((col, i) => {
+      col.slice(0, col.length - 1)
+        .filter(cell => cell.base !== null)
+        .filter(({base, gx, gy}) => base === grid[gy][gx + 1].base)
+        .forEach(cell => {
+          console.log(`square found at`, cell, 'x', grid[cell.gy][cell.gx + 1]);
+          cell.colour = 'rgb(0,0,255)';
+          grid[cell.gy][cell.gx + 1].colour = 'rgb(0,0,255)';
+        });
+    });
+
+  var topTot = 0;
   for(var i = 0; i < blocks.length; i++) {
-    if(blocks[i].a.y >= (SQUAREA - BS))
-      botTot++;
     if(blocks[i].b.y <= 0)
       topTot++;
   }
-  if(botTot == Math.ceil(SQUAREA / BS))
-    document.getElementById('tally').textContent = 'Some win!';
   if(topTot > 0) {
     document.getElementById('tally').textContent = 'EPIC FAIL';
     return 'GAME OVER';
