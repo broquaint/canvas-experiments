@@ -32,10 +32,15 @@ function drawGrid() {
 
 // https://coolors.co/5603ad-8367c7-b3e9c7-255957-ed6a5a-eb9486
 const COLOURS = [
-  ['purple', 'rgb(86,3,173)',   'rgb(131,103,199)'],
-  ['mint',   'rgb(37,89,87)',   'rgb(179,233,199)'],
-  ['orange', 'rgb(237,106,90)', 'rgb(235,148,134)']
+  ['purple', 'rgb(86,3,173)',     'rgb(131,103,199)'],  // Purple, Blue Violet Crayola
+  ['green',  'rgb(54, 129, 127)', 'rgb(98, 208, 142)'], // Celadon Green, Emerald
+  ['orange', 'rgb(237,106,90)',   'rgb(235,148,134)']   // Terra Cotta, Vivid Tangerine
 ];
+const MATCHED = {
+  purple: 'rgb(169, 151, 216)', // Blue Bell
+  green:  'rgb(176, 232, 198)', // Magic Mint
+  orange: 'rgb(241, 177, 167)', // Melon
+};
 function newPair() {
   var enter = Math.floor(Math.random() * SQUAREA);
   enter -= enter % BS;
@@ -113,8 +118,8 @@ function runTheNumbers() {
         .filter(({base, gx, gy}) => base === grid[gy][gx + 1].base)
         .forEach(cell => {
           console.log(`square found at`, cell, 'x', grid[cell.gy][cell.gx + 1]);
-          cell.colour = 'rgb(0,0,255)';
-          grid[cell.gy][cell.gx + 1].colour = 'rgb(0,0,255)';
+          cell.colour = MATCHED[cell.base];
+          grid[cell.gy][cell.gx + 1].colour = MATCHED[cell.base];
         });
     });
 
