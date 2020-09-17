@@ -9,23 +9,33 @@ const LEFT    = 37;
 const RIGHT   = 39;
 const DOWN    = 40;
 
-function square(x, y, colour) {
- var canvas = document.getElementById("canvas");
- var ctx    = canvas.getContext("2d");
+const GAP = "rgb(175,172,177)";
+function fillCell({x, y, colour, type}) {
+  var canvas = document.getElementById("canvas");
+  var ctx    = canvas.getContext("2d");
 
- ctx.fillStyle = colour || "rgb(175,172,177)";
- ctx.fillRect(x, y, 18, 18);
+  if(type == 'breaker') {
+    ctx.fillStyle = GAP;
+    ctx.fillRect(x, y, 18, 18);
+    ctx.fillStyle = colour;
+    ctx.fillRect(x + 4, y + 4, 10, 10);
+  }
+  else {
+    ctx.fillStyle = colour || GAP;
+    ctx.fillRect(x, y, 18, 18);
+  }
+
 }
 
 function drawPair(bp) {
-  square(bp.a.x, bp.a.y, bp.a.colour);
-  square(bp.b.x, bp.b.y, bp.b.colour);
+  fillCell(bp.a);
+  fillCell(bp.b);
 }
 
 function drawGrid() {
   for(var i = 0; i < SQUAREA; i += BS) {
     for(var j = 0; j < SQUAREA; j += BS) {
-      square(i, j);
+      fillCell({x: i, y: j});
     }
   }
 }
@@ -46,10 +56,12 @@ function newPair() {
   enter -= enter % BS;
 
   var [base, colourA, colourB] = COLOURS[Math.floor(Math.random() * 10 % COLOURS.length)];
+  var maybeBreaker = Math.random() < 0.3 ? 'breaker' : 'block';
   return {
     state:  'moving',
-    a: { x: enter, y: 0,   colour: colourA, state: 'moving', base },
-    b: { x: enter, y: -BS, colour: colourB, state: 'moving', base }
+    // a = bottom cell, b = top cell
+    a: { x: enter, y: 0,   colour: colourA, base, type: maybeBreaker, state: 'moving' },
+    b: { x: enter, y: -BS, colour: colourB, base, type: 'block',      state: 'moving' }
   };
 }
 
@@ -133,7 +145,6 @@ function runTheNumbers() {
     return 'GAME OVER';
   }
 }
-
 
 function start() {
   blocks = [newPair()];
