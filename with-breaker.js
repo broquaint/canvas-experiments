@@ -108,12 +108,13 @@ function hasCollision(curBp, dir) {
     if( dir == DOWN
     && (curBp.a.y + BS) == bp.a.y
     && (curBp.a.y + BS) == bp.b.y)
-      return 'blocks down';
+      return 'blocks below';
   }
 
   return false;
 }
 
+var matchId = 0;
 function runTheNumbers() {
   var size = Math.ceil(SQUAREA / BS),
       grid = Array.from(
@@ -125,14 +126,27 @@ function runTheNumbers() {
     grid[y2][x2] = Object.assign(p.b, {gx: x2, gy: y2});
   });
   grid.forEach((col, i) => {
-      col.slice(0, col.length - 1)
-        .filter(cell => cell.base !== null)
-        .filter(({base, gx, gy}) => base === grid[gy][gx + 1].base)
-        .forEach(cell => {
-          console.log(`square found at`, cell, 'x', grid[cell.gy][cell.gx + 1]);
-          cell.colour = MATCHED[cell.base];
-          grid[cell.gy][cell.gx + 1].colour = MATCHED[cell.base];
-        });
+    col.slice(0, col.length - 1)
+      .filter(cell => cell.base !== null)
+      .filter(({base, gx, gy}) => base === grid[gy][gx + 1].base)
+      .forEach(cell => {
+        var {gx, gy} = cell,
+            curCell = cell;
+        while(curCell.base === cell.base) {
+          // console.log(`square found at`, cell, 'x', grid[cell.gy][cell.gx + 1]);
+          curCell.matchId = matchId;
+          curCell.colour  = MATCHED[curCell.base];
+          if(curCell.gy < grid.length - 1) {
+            let otherCell = grid[curCell.gy + 1][curCell.gx];
+            otherCell.matchId = matchId;
+            otherCell.colour  = MATCHED[otherCell.base];
+          }
+          curCell = grid[gy][++gx];
+          if(!curCell)
+            break;
+        }
+        matchId++;
+      });
     });
 
   var topTot = 0;
@@ -144,6 +158,12 @@ function runTheNumbers() {
     document.getElementById('tally').textContent = 'EPIC FAIL';
     return 'GAME OVER';
   }
+
+  return 'ok';
+}
+
+function breakMatched() {
+  console.log(`breaking matched ...`);
 }
 
 function start() {
@@ -169,6 +189,9 @@ function init_loop() {
     var blockPair = blocks[blocks.length - 1],
         collision = hasCollision(blockPair);
     if(collision) {
+      if(collision == 'blocks below' && blockPair.a.type == 'breaker') {
+        breakMatched();
+      }
       // console.log(`collision '${collision}' at a:`, blockPair.a, 'b:', blockPair.b);
       if(runTheNumbers() === 'GAME OVER') {
         clearInterval(gameLoopId);
@@ -182,7 +205,7 @@ function init_loop() {
     blockPair.a.y += BS;
     blockPair.b.y += BS;
 
-    draw();
+    draw();  
   }, 500);
 }
 
