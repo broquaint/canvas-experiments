@@ -130,8 +130,10 @@ function buildGrid(blocks) {
 }
 
 var matchId = 0;
+var tally = 0;
 function runTheNumbers() {
   var grid = buildGrid(blocks);
+  // Find and mark all blocks of the same colour.
   grid.forEach((col, i) => {
     col.slice(0, col.length - 1)
       .filter(cell => cell.base !== null)
@@ -162,8 +164,9 @@ function runTheNumbers() {
     if(blocks[i].b.y <= 0)
       topTot++;
   }
+  // Check if a column has filled up.
   if(topTot > 0) {
-    document.getElementById('tally').textContent = 'EPIC FAIL';
+    setTally(0, 'Game over!');
     return 'GAME OVER';
   }
 
@@ -179,10 +182,18 @@ function breakMatched(breakerPair) {
     var remainder = blocks.filter(
       pair => pair.a.matchId !== toBreak.matchId && pair !== breakerPair
     );
+    setTally(blocks.filter(c => !remainder.includes(c)).length * 2);
     // console.log(`keeping`, remainder);
     // console.log(`removing`, blocks.filter(({a, b}) => a.matchId === toBreak.matchId));
     blocks = remainder;
   }
+}
+
+function setTally(n, msg) {
+  var newScore = tally + (n * 10);
+  document.getElementById('tally').textContent = newScore;
+  document.getElementById('msg').textContent = n > 0 ? `+${n * 10}` : msg;
+  tally = newScore;
 }
 
 function start() {
