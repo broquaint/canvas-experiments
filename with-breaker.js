@@ -2,7 +2,7 @@
 // The current "design" makes this more difficult thant it needs to be.
 // So the best thing to do will be to start over. Probably.
 
-var SQUAREA = 150;
+var SQUAREA = 190;
 var BS      = 20;
 // Key codes for the keydown event
 const LEFT    = 37;
@@ -114,38 +114,46 @@ function hasCollision(curBp, dir) {
   return false;
 }
 
-var matchId = 0;
-function runTheNumbers() {
+function buildGrid(blocks) {
   var size = Math.ceil(SQUAREA / BS),
       grid = Array.from(
         Array(size), () => Array.from(Array(size), () => ({base: null}))
-  );
+      );
   blocks.forEach(p => {
     var [x1,y1,x2,y2] = [p.a.x, p.a.y, p.b.x, p.b.y].map(n => n > 1 ? n / BS : n);
+    // Modifying the cell because it simplifies later breaker calculation.
+    // Should really move to grid based state ...
     grid[y1][x1] = Object.assign(p.a, {gx: x1, gy: y1});
     grid[y2][x2] = Object.assign(p.b, {gx: x2, gy: y2});
   });
+  return grid;
+}
+
+var matchId = 0;
+function runTheNumbers() {
+  var grid = buildGrid(blocks);
   grid.forEach((col, i) => {
     col.slice(0, col.length - 1)
       .filter(cell => cell.base !== null)
       .filter(({base, gx, gy}) => base === grid[gy][gx + 1].base)
       .forEach(cell => {
         var {gx, gy} = cell,
-            curCell = cell;
+            curCell = cell,
+            id = curCell.matchId || ++matchId;
+        // console.log(`matching on '${cell.base}`, cell, `with ${id}`);
         while(curCell.base === cell.base) {
-          // console.log(`square found at`, cell, 'x', grid[cell.gy][cell.gx + 1]);
-          curCell.matchId = matchId;
+          // console.log(`${cell.base} -> ${id}`);
+          curCell.matchId = id;
           curCell.colour  = MATCHED[curCell.base];
           if(curCell.gy < grid.length - 1) {
             let otherCell = grid[curCell.gy + 1][curCell.gx];
-            otherCell.matchId = matchId;
+            otherCell.matchId = id;
             otherCell.colour  = MATCHED[otherCell.base];
           }
           curCell = grid[gy][++gx];
           if(!curCell)
             break;
         }
-        matchId++;
       });
     });
 
@@ -162,8 +170,19 @@ function runTheNumbers() {
   return 'ok';
 }
 
-function breakMatched() {
+function breakMatched(breakerPair) {
   console.log(`breaking matched ...`);
+  var grid = buildGrid(blocks),
+      breaker = breakerPair.a,
+      toBreak = grid[breaker.gy + 1][breaker.gx];
+  if(toBreak.matchId && toBreak.base === breaker.base) {
+    var remainder = blocks.filter(
+      pair => pair.a.matchId !== toBreak.matchId && pair !== breakerPair
+    );
+    // console.log(`keeping`, remainder);
+    // console.log(`removing`, blocks.filter(({a, b}) => a.matchId === toBreak.matchId));
+    blocks = remainder;
+  }
 }
 
 function start() {
@@ -190,7 +209,8 @@ function init_loop() {
         collision = hasCollision(blockPair);
     if(collision) {
       if(collision == 'blocks below' && blockPair.a.type == 'breaker') {
-        breakMatched();
+        breakMatched(blockPair);
+        draw();
       }
       // console.log(`collision '${collision}' at a:`, blockPair.a, 'b:', blockPair.b);
       if(runTheNumbers() === 'GAME OVER') {
