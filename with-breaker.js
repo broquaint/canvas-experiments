@@ -232,7 +232,6 @@ function init_loop() {
     if(collision) {
       if(collision == 'blocks below' && blockPair.a.type == 'breaker') {
         breakMatched(blockPair);
-        draw();
       }
       // console.log(`collision '${collision}' at a:`, blockPair.a, 'b:', blockPair.b);
       if(runTheNumbers() === 'GAME OVER') {
@@ -242,6 +241,7 @@ function init_loop() {
         blocks[blocks.length - 1].state = 'set';
         blocks.push(newPair());
       }
+      draw();
       return;
     }
     blockPair.a.y += BS;
