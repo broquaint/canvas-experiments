@@ -10,11 +10,11 @@ const RIGHT   = 39;
 const DOWN    = 40;
 
 const GAP = "rgb(175,172,177)";
-function fillCell({x, y, colour, type}) {
+function fillCell({x, y, colour, type}, state) {
   var canvas = document.getElementById("canvas");
   var ctx    = canvas.getContext("2d");
 
-  if(type == 'breaker') {
+  if(type == 'breaker' && state !== 'set') {
     ctx.fillStyle = GAP;
     ctx.fillRect(x, y, 18, 18);
     ctx.fillStyle = colour;
@@ -28,8 +28,8 @@ function fillCell({x, y, colour, type}) {
 }
 
 function drawPair(bp) {
-  fillCell(bp.a);
-  fillCell(bp.b);
+  fillCell(bp.a, bp.state);
+  fillCell(bp.b, bp.state);
 }
 
 function drawGrid() {
