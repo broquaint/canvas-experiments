@@ -210,6 +210,8 @@ function draw() {
 var gameLoopId;
 function run() {
   clearInterval(gameLoopId);
+  tally = 0;
+  setTally(0, '...');
   start();
   init_loop();
 }
