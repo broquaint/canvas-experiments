@@ -51,12 +51,21 @@ const MATCHED = {
   green:  'rgb(176, 232, 198)', // Magic Mint
   orange: 'rgb(241, 177, 167)', // Melon
 };
+var turnsSinceBreaker = 0;
 function newPair() {
   var enter = Math.floor(Math.random() * SQUAREA);
   enter -= enter % BS;
 
   var [base, colourA, colourB] = COLOURS[Math.floor(Math.random() * 10 % COLOURS.length)];
-  var maybeBreaker = Math.random() < 0.3 ? 'breaker' : 'block';
+  var maybeBreaker;
+  // Use turnsSinceBreaker to ensure some regularity of breakers.
+  if(Math.random() < 0.3 || ++turnsSinceBreaker > 5) {
+    maybeBreaker = 'breaker';
+    turnsSinceBreaker = 0;
+  }
+  else {
+    maybeBreaker = 'block';
+  }
   return {
     state:  'moving',
     // a = bottom cell, b = top cell
