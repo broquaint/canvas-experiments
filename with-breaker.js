@@ -2,18 +2,19 @@
 // The current "design" makes this more difficult thant it needs to be.
 // So the best thing to do will be to start over. Probably.
 
-var SQUAREA = 190;
-var BS      = 20;
+const GRIDIM  = 9;   // Dimension of the grid square
+const BS      = 20;  // Block size
 // Key codes for the keydown event
 const LEFT    = 37;
 const RIGHT   = 39;
 const DOWN    = 40;
 
 const GAP = "rgb(175,172,177)";
-function fillCell({x, y, colour, type}, state) {
+function fillCell({gx, gy, colour, type}, state) {
   var canvas = document.getElementById("canvas");
   var ctx    = canvas.getContext("2d");
 
+  let [x, y] = [gx * BS, gy * BS];
   if(type == 'breaker' && state !== 'set') {
     ctx.fillStyle = GAP;
     ctx.fillRect(x, y, 18, 18);
@@ -33,9 +34,9 @@ function drawPair(bp) {
 }
 
 function drawGrid() {
-  for(var i = 0; i < SQUAREA; i += BS) {
-    for(var j = 0; j < SQUAREA; j += BS) {
-      fillCell({x: i, y: j});
+  for(var i = 0; i <= GRIDIM; i++) {
+    for(var j = 0; j <= GRIDIM; j++) {
+      fillCell({gx: i, gy: j});
     }
   }
 }
@@ -53,8 +54,7 @@ const MATCHED = {
 };
 var turnsSinceBreaker = 0;
 function newPair() {
-  var enter = Math.floor(Math.random() * SQUAREA);
-  enter -= enter % BS;
+  var enter = Math.floor(Math.random() * GRIDIM);
 
   var [base, colourA, colourB] = COLOURS[Math.floor(Math.random() * 10 % COLOURS.length)];
   var maybeBreaker;
@@ -69,54 +69,55 @@ function newPair() {
   return {
     state:  'moving',
     // a = bottom cell, b = top cell
-    a: { x: enter, y: 0,   colour: colourA, base, type: maybeBreaker, state: 'moving' },
-    b: { x: enter, y: -BS, colour: colourB, base, type: 'block',      state: 'moving' }
+    a: { gx: enter, gy: 0,  colour: colourA, base, type: maybeBreaker, state: 'moving' },
+    b: { gx: enter, gy: -1, colour: colourB, base, type: 'block',      state: 'moving' }
   };
 }
 
 var blocks = [];
 
 function hasCollision(curBp, dir) {
-  var x = curBp.a.x,
-      y = curBp.a.y,
+  var x = curBp.a.gx,
+      y = curBp.a.gy ,
     len = blocks.length - 1;
 
   // At the edge of the grid?
   if((dir == LEFT  && x == 0)
-  || (dir == RIGHT && (x + 20) >= SQUAREA) ) 
-    return 'grid edge horizontal';
+  || (dir == RIGHT && (x + 1) >= GRIDIM) )
+    return 'grid edge vertical';
 
   // At the edge of the grid?
-  if((y + BS) >= SQUAREA)
-    return `grid edge vertical`;
+  if(y >= GRIDIM)
+    return `grid edge horizontal`;
   
   for(var i = 0; i < len; i++) {
     var bp = blocks[i];
     // Any blocks below?
-    if(x == bp.a.x && (y + (BS * 2)) == bp.a.y)
+    if(x == bp.a.gx && (y + 2) == bp.a.gy)
       return 'blocks below';
 
     // Only check for blocks left/right for movements
     if(!dir) continue;
+
     // Don't check left/right if curBp isn't on the same level.
-    if(! (curBp.a.y == bp.a.y || curBp.a.y == bp.b.y) )
+    if(! (curBp.a.gy == bp.a.gy || curBp.a.gy == bp.b.gy) )
       continue;
 
     // Any blocks to left of the current bottom block?
     if( dir == LEFT
-    && (curBp.a.x - BS) == bp.a.x
-    && (curBp.a.x - BS) == bp.b.x)
+    && (curBp.a.gx - 1) == bp.a.gx
+    && (curBp.a.gx - 1) == bp.b.gx)
       return 'blocks left';
     // Any blocks to right of the current bottom block?
     if( dir == RIGHT
-    && (curBp.a.x + BS) == bp.a.x
-    && (curBp.a.x + BS) == bp.b.x)
+    && (curBp.a.gx + 1) == bp.a.gx
+    && (curBp.a.gx + 1) == bp.b.gx)
       return 'blocks right';
 
     // Any blocks below this pair?
     if( dir == DOWN
-    && (curBp.a.y + BS) == bp.a.y
-    && (curBp.a.y + BS) == bp.b.y)
+    && (curBp.a.gy + 1) == bp.a.gy
+    && (curBp.a.gy + 1) == bp.b.gy)
       return 'blocks below';
   }
 
@@ -124,16 +125,16 @@ function hasCollision(curBp, dir) {
 }
 
 function buildGrid(blocks) {
-  var size = Math.ceil(SQUAREA / BS),
+  const size = GRIDIM + 1,
+      // Generate grid of empty cells.
       grid = Array.from(
-        Array(size), () => Array.from(Array(size), () => ({base: null}))
+        Array(size),
+        () => Array.from(Array(size), () => ({}))
       );
-  blocks.forEach(p => {
-    var [x1,y1,x2,y2] = [p.a.x, p.a.y, p.b.x, p.b.y].map(n => n > 1 ? n / BS : n);
-    // Modifying the cell because it simplifies later breaker calculation.
-    // Should really move to grid based state ...
-    grid[y1][x1] = Object.assign(p.a, {gx: x1, gy: y1});
-    grid[y2][x2] = Object.assign(p.b, {gx: x2, gy: y2});
+  // Populate blocks into grid.
+  blocks.forEach(({ a, b }) => {
+    grid[a.gy][a.gx] = a;
+    grid[b.gy][b.gx] = b;
   });
   return grid;
 }
@@ -143,9 +144,10 @@ var tally = 0;
 function runTheNumbers() {
   var grid = buildGrid(blocks);
   // Find and mark all blocks of the same colour.
+  console.log(`running the numbers ...`);
   grid.forEach((col, i) => {
     col.slice(0, col.length - 1)
-      .filter(cell => cell.base !== null)
+      .filter(cell => 'base' in cell)
       .filter(({base, gx, gy}) => base === grid[gy][gx + 1].base)
       .forEach(cell => {
         var {gx, gy} = cell,
@@ -153,10 +155,10 @@ function runTheNumbers() {
             id = curCell.matchId || ++matchId;
         // console.log(`matching on '${cell.base}`, cell, `with ${id}`);
         while(curCell.base === cell.base) {
-          // console.log(`${cell.base} -> ${id}`);
+          console.log(`${cell.base} -> ${id}`);
           curCell.matchId = id;
           curCell.colour  = MATCHED[curCell.base];
-          if(curCell.gy < grid.length - 1) {
+          if(curCell.gy < GRIDIM) {
             let otherCell = grid[curCell.gy + 1][curCell.gx];
             otherCell.matchId = id;
             otherCell.colour  = MATCHED[otherCell.base];
@@ -170,7 +172,7 @@ function runTheNumbers() {
 
   var topTot = 0;
   for(var i = 0; i < blocks.length; i++) {
-    if(blocks[i].b.y <= 0)
+    if(blocks[i].b.gy <= 0)
       topTot++;
   }
   // Check if a column has filled up.
@@ -192,8 +194,8 @@ function breakMatched(breakerPair) {
       pair => pair.a.matchId !== toBreak.matchId && pair !== breakerPair
     );
     setTally(blocks.filter(c => !remainder.includes(c)).length * 2);
-    // console.log(`keeping`, remainder);
-    // console.log(`removing`, blocks.filter(({a, b}) => a.matchId === toBreak.matchId));
+    console.log(`keeping`, remainder);
+    console.log(`removing`, blocks.filter(({a, b}) => a.matchId === toBreak.matchId));
     blocks = remainder;
   }
 }
@@ -230,6 +232,7 @@ function init_loop() {
     var blockPair = blocks[blocks.length - 1],
         collision = hasCollision(blockPair);
     if(collision) {
+      console.log(`collided - '${collision}' with `, blockPair);
       if(collision == 'blocks below' && blockPair.a.type == 'breaker') {
         breakMatched(blockPair);
       }
@@ -244,8 +247,8 @@ function init_loop() {
       draw();
       return;
     }
-    blockPair.a.y += BS;
-    blockPair.b.y += BS;
+    blockPair.a.gy++;
+    blockPair.b.gy++;
 
     draw();  
   }, 500);
@@ -264,7 +267,7 @@ function pause() {
 document.addEventListener('keydown', function(evt) {
   var key       = evt.keyCode,
       blockPair = blocks[blocks.length - 1],
-      move      = { x: blockPair.a.x, y: blockPair.a.y };
+      move      = { gx: blockPair.a.gx, gy: blockPair.a.gy };
 
   // r == Reset
   if(key == 82) {
@@ -282,17 +285,17 @@ document.addEventListener('keydown', function(evt) {
     return;
 
   if(key == RIGHT)
-    move.x += BS;
+    move.gx++;
   else if(key == LEFT)
-    move.x -= BS;
+    move.gx--;
   else if(key == DOWN)
-    move.y += BS;
+    move.gy++;
 
   if(!hasCollision(blockPair, key)) {
-    blockPair.a.x = move.x;
-    blockPair.b.x = move.x;
-    blockPair.a.y = move.y;
-    blockPair.b.y = move.y - BS;
+    blockPair.a.gx = move.gx;
+    blockPair.b.gx = move.gx;
+    blockPair.a.gy = move.gy;
+    blockPair.b.gy = move.gy - 1;
     draw();
   }
 }, true);
