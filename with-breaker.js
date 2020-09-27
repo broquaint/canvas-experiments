@@ -10,9 +10,23 @@ const RIGHT   = 39;
 const DOWN    = 40;
 
 const GAP = "rgb(175,172,177)";
+
+
+// https://coolors.co/5603ad-8367c7-b3e9c7-255957-ed6a5a-eb9486
+const COLOURS = [
+  ['purple', 'rgb(86,3,173)',     'rgb(131,103,199)'],  // Purple, Blue Violet Crayola
+  ['green',  'rgb(54, 129, 127)', 'rgb(98, 208, 142)'], // Celadon Green, Emerald
+  ['orange', 'rgb(237,106,90)',   'rgb(235,148,134)']   // Terra Cotta, Vivid Tangerine
+];
+const MATCHED = {
+  purple: 'rgb(169, 151, 216)', // Blue Bell
+  green:  'rgb(176, 232, 198)', // Magic Mint
+  orange: 'rgb(241, 177, 167)', // Melon
+};
+
 function fillCell({gx, gy, colour, type}, state) {
-  var canvas = document.getElementById("canvas");
-  var ctx    = canvas.getContext("2d");
+  const canvas = document.getElementById("canvas"),
+        ctx    = canvas.getContext("2d");
 
   let [x, y] = [gx * BS, gy * BS];
   if(type == 'breaker' && state !== 'set') {
@@ -34,30 +48,19 @@ function drawPair(bp) {
 }
 
 function drawGrid() {
-  for(var i = 0; i <= GRIDIM; i++) {
-    for(var j = 0; j <= GRIDIM; j++) {
+  for(let i = 0; i <= GRIDIM; i++) {
+    for(let j = 0; j <= GRIDIM; j++) {
       fillCell({gx: i, gy: j});
     }
   }
 }
 
-// https://coolors.co/5603ad-8367c7-b3e9c7-255957-ed6a5a-eb9486
-const COLOURS = [
-  ['purple', 'rgb(86,3,173)',     'rgb(131,103,199)'],  // Purple, Blue Violet Crayola
-  ['green',  'rgb(54, 129, 127)', 'rgb(98, 208, 142)'], // Celadon Green, Emerald
-  ['orange', 'rgb(237,106,90)',   'rgb(235,148,134)']   // Terra Cotta, Vivid Tangerine
-];
-const MATCHED = {
-  purple: 'rgb(169, 151, 216)', // Blue Bell
-  green:  'rgb(176, 232, 198)', // Magic Mint
-  orange: 'rgb(241, 177, 167)', // Melon
-};
 var turnsSinceBreaker = 0;
 function newPair() {
-  var enter = Math.floor(Math.random() * GRIDIM);
+  const enter = Math.floor(Math.random() * GRIDIM),
+        [base, colourA, colourB] = COLOURS[Math.floor(Math.random() * 10 % COLOURS.length)];
 
-  var [base, colourA, colourB] = COLOURS[Math.floor(Math.random() * 10 % COLOURS.length)];
-  var maybeBreaker;
+  let maybeBreaker;
   // Use turnsSinceBreaker to ensure some regularity of breakers.
   if(Math.random() < 0.3 || ++turnsSinceBreaker > 5) {
     maybeBreaker = 'breaker';
@@ -66,6 +69,7 @@ function newPair() {
   else {
     maybeBreaker = 'block';
   }
+
   return {
     state:  'moving',
     // a = bottom cell, b = top cell
@@ -77,9 +81,9 @@ function newPair() {
 var blocks = [];
 
 function hasCollision(curBp, dir) {
-  var x = curBp.a.gx,
-      y = curBp.a.gy ,
-    len = blocks.length - 1;
+  const x = curBp.a.gx,
+        y = curBp.a.gy ,
+      len = blocks.length - 1;
 
   // At the edge of the grid?
   if((dir == LEFT  && x == 0)
@@ -90,8 +94,8 @@ function hasCollision(curBp, dir) {
   if(y >= GRIDIM)
     return `grid edge horizontal`;
   
-  for(var i = 0; i < len; i++) {
-    var bp = blocks[i];
+  for(let i = 0; i < len; i++) {
+    const bp = blocks[i];
     // Any blocks below?
     if(x == bp.a.gx && (y + 2) == bp.a.gy)
       return 'blocks below';
@@ -126,11 +130,11 @@ function hasCollision(curBp, dir) {
 
 function buildGrid(blocks) {
   const size = GRIDIM + 1,
-      // Generate grid of empty cells.
-      grid = Array.from(
-        Array(size),
-        () => Array.from(Array(size), () => ({}))
-      );
+        // Generate grid of empty cells.
+        grid = Array.from(
+          Array(size),
+          () => Array.from(Array(size), () => ({}))
+        );
   // Populate blocks into grid.
   blocks.forEach(({ a, b }) => {
     grid[a.gy][a.gx] = a;
@@ -142,7 +146,7 @@ function buildGrid(blocks) {
 var matchId = 0;
 var tally = 0;
 function runTheNumbers() {
-  var grid = buildGrid(blocks);
+  const grid = buildGrid(blocks);
   // Find and mark all blocks of the same colour.
   console.log(`running the numbers ...`);
   grid.forEach((col, i) => {
@@ -150,9 +154,9 @@ function runTheNumbers() {
       .filter(cell => 'base' in cell)
       .filter(({base, gx, gy}) => base === grid[gy][gx + 1].base)
       .forEach(cell => {
-        var {gx, gy} = cell,
-            curCell = cell,
-            id = curCell.matchId || ++matchId;
+        const {gx, gy} = cell,
+              curCell  = cell,
+              id       = curCell.matchId || ++matchId;
         // console.log(`matching on '${cell.base}`, cell, `with ${id}`);
         while(curCell.base === cell.base) {
           console.log(`${cell.base} -> ${id}`);
@@ -170,8 +174,8 @@ function runTheNumbers() {
       });
     });
 
-  var topTot = 0;
-  for(var i = 0; i < blocks.length; i++) {
+  let topTot = 0;
+  for(let i = 0; i < blocks.length; i++) {
     if(blocks[i].b.gy <= 0)
       topTot++;
   }
@@ -186,22 +190,23 @@ function runTheNumbers() {
 
 function breakMatched(breakerPair) {
   console.log(`breaking matched ...`);
-  var grid = buildGrid(blocks),
-      breaker = breakerPair.a,
-      toBreak = grid[breaker.gy + 1][breaker.gx];
+  const grid    = buildGrid(blocks),
+        breaker = breakerPair.a,
+        toBreak = grid[breaker.gy + 1][breaker.gx];
   if(toBreak.matchId && toBreak.base === breaker.base) {
-    var remainder = blocks.filter(
+    const remainder = blocks.filter(
       pair => pair.a.matchId !== toBreak.matchId && pair !== breakerPair
     );
     setTally(blocks.filter(c => !remainder.includes(c)).length * 2);
-    console.log(`keeping`, remainder);
-    console.log(`removing`, blocks.filter(({a, b}) => a.matchId === toBreak.matchId));
+    // console.log(`keeping`, remainder);
+    // console.log(`removing`, blocks.filter(({a, b}) => a.matchId === toBreak.matchId));
+    // Remove matched blocks from the game.
     blocks = remainder;
   }
 }
 
 function setTally(n, msg) {
-  var newScore = tally + (n * 10);
+  const newScore = tally + (n * 10);
   document.getElementById('tally').textContent = newScore;
   document.getElementById('msg').textContent = n > 0 ? `+${n * 10}` : msg;
   tally = newScore;
@@ -214,7 +219,7 @@ function start() {
 
 function draw() {
   drawGrid();
-  for(var i = 0; i < blocks.length; i++)
+  for(let i = 0; i < blocks.length; i++)
     drawPair(blocks[i]);
 }
 
@@ -229,8 +234,8 @@ function run() {
 
 function init_loop() {
   gameLoopId = setInterval(function() {
-    var blockPair = blocks[blocks.length - 1],
-        collision = hasCollision(blockPair);
+    const blockPair = blocks[blocks.length - 1],
+          collision = hasCollision(blockPair);
     if(collision) {
       console.log(`collided - '${collision}' with `, blockPair);
       if(collision == 'blocks below' && blockPair.a.type == 'breaker') {
@@ -265,9 +270,9 @@ function pause() {
 }
 
 document.addEventListener('keydown', function(evt) {
-  var key       = evt.keyCode,
-      blockPair = blocks[blocks.length - 1],
-      move      = { gx: blockPair.a.gx, gy: blockPair.a.gy };
+  const key       = evt.keyCode,
+        blockPair = blocks[blocks.length - 1],
+        move      = { gx: blockPair.a.gx, gy: blockPair.a.gy };
 
   // r == Reset
   if(key == 82) {
